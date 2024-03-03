@@ -1,0 +1,71 @@
+ZJU ID: 3210110278
+intl ID: yuxuanl.21 
+UIUC NetID: yuxuan42
+date: 2023/05/03
+modification:
+1. Copy MP5 into MP6 folder (that is: maptiles.{cpp,h} and kdtree.{cpp,h}) without modification: 
+
+    (1)Time:
+    time ./mp6 tests/source.png ../mp5/mp5_pngs/ 400 5 mosaic.png
+    Loading Tile Images... (4730/4730)... 4479 unique images loaded
+    Populating Mosaic: setting tile (399, 532)                    
+    Drawing Mosaic: resizing tiles (213200/213200)                    
+    Saving Output Image... Done
+
+    real	0m39.208s
+    user	0m3.650s
+    sys	0m35.164s
+
+    (2)Space:
+    valgrind ./mp6 tests/source.png ../mp5/mp5_pngs/ 400 5 mosaic.png
+    ==45303== Memcheck, a memory error detector
+    ==45303== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+    ==45303== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+    ==45303== Command: ./mp6 tests/source.png ../mp5/mp5_pngs/ 400 5 mosaic.png
+    ==45303== 
+    Loading Tile Images... (4730/4730)... 4479 unique images loaded
+    Populating Mosaic: setting tile (399, 532)                    
+    Drawing Mosaic: resizing tiles (213200/213200)                    
+    Saving Output Image... Done
+    ==45303== 
+    ==45303== HEAP SUMMARY:
+    ==45303==     in use at exit: 0 bytes in 0 blocks
+    ==45303==   total heap usage: 955,504,563 allocs, 955,504,563 frees, 97,060,907,091 bytes allocated
+    ==45303== 
+    ==45303== All heap blocks were freed -- no leaks are possible
+    ==45303== 
+    ==45303== For lists of detected and suppressed errors, rerun with: -s
+    ==45303== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+
+2. Change vector<TileImage>& theTiles to vector<TileImage*>& theTiles
+/*  When the mosaic is being populated with tile images, w∗h∗PNG additional memory is allocated. 
+ *  For a large mosaic, this would require over 1 TB of RAM! 
+ *  Modify the MP to allocate w∗h∗C memory when the mosaic is populated, where C is a small constant 
+ */
+    Following hints, my vector to store TileImage is much smaller as it only store pointers.
+    As its result, I modified makePhotoMosaic in main.cpp also.
+    
+/*  After reducing the memory footprint of the program, the following occurs when generating a large mosaic:
+    The “tile images” are loaded, running in O(n) time
+    The mosaic is populated with images, running in O(w∗h∗lg(n))time
+    The mosaic is drawing… in O(w∗h∗w′∗h′) time, where w′  and h′ are the width and height of the “tile images”
+    When a mosaic is drawing, the running time is effectively a quartic polynomial!
+    Modify the MP to draw the mosaic in O(w∗h+n∗w′∗h′) time.
+ */
+
+    And then I changed map<Point<3>, int> map to map<Point<3>, TileImage*> map;
+    I store pointer directly in my map. To achieve that, I modified get_match_at_idx and mapTiles.
+
+    Now Time measured is a bit faster:
+    time ./mp6 tests/source.png ../mp5/mp5_pngs/ 400 5 mosaic.png
+    Loading Tile Images... (4730/4730)... 4479 unique images loaded
+    Populating Mosaic: setting tile (399, 532)                    
+    Drawing Mosaic: resizing tiles (213200/213200)                    
+    Saving Output Image... Done
+
+    real	0m32.821s
+    user	0m4.500s
+    sys	0m27.958s
+
+    And definitely less space are used.
